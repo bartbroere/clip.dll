@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.Json;
+using Math;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
@@ -29,6 +30,18 @@ class CLIP {
 
         // Load an image specified as a command line argument
         var image = Image.Load<Rgba32>(File.ReadAllBytes(args[0]));
+
+        // Calculate the shortest side, and use that to extract a square from the center
+        // Known in other image libraries as Centercrop
+        // AFAIK Centercrop is not available in Sixlabors.ImageSharp, so we do it manually
+        var smallestSide = Math.Min(image.Width, image.Height);
+        image.Mutate(x => x.Crop(
+            new Rectangle(
+                (image.Width - smallestSide) / 2,
+            (image.Height - smallestSide) / 2,
+            smallestSide,
+            smallestSide
+        )));
 
         // Resize to 224 x 224 (bicubic resizing is the default)
         image.Mutate(x => x.Resize(224, 224));
